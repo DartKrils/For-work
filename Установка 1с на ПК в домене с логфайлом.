@@ -1,0 +1,64 @@
+# Установка имени устройства
+set DEVICE\_NAME=%COMPUTERNAME%
+
+# Установка имени, которое не может быть использовано для устройства
+set INVALID\_NAME=имя устройства
+
+# Список имен, которые не могут быть использованы для устройства
+set INVALID\_NAMES=имя устройств
+
+# Проверка имени устройства на наличие запрещенных символов
+for %%i in (%INVALID\_NAME% %INVALID\_NAMES%) do (
+    echo %DEVICE\_NAME% | find /i "%%~i" > nul
+    if not errorlevel 1 (
+        echo Device name contains invalid characters
+        exit
+    )
+)
+
+# Установка пути к общей папке, содержащей пакет
+set SHARE\_PATH=C:\путь к папке
+
+# Установка имени пакета
+set PACKAGE\_NAME=1CEnterprise 8 Thin client (x86-64).msi
+
+# Установка полного пути к пакету
+set FULL\_PATH="%SHARE\_PATH%\%PACKAGE\_NAME%"
+
+# Установка пути к журналу установки
+set LOG\_PATH=путь к лог файлу\logs1865.txt
+
+# Проверка наличия программы "1cv8" в Program Files
+:1C\_Check
+IF EXIST "C:\Program Files\1cv8\8.3.23.1865" (
+    GOTO EXIT
+) ELSE (
+    GOTO INSTALLERCHECK
+)
+
+# Проверка наличия полного пути к пакету в общей папке
+:INSTALLERCHECK
+IF EXIST "%FULL\_PATH%" (
+    GOTO INSTALL
+) ELSE (
+    GOTO COPY
+)
+
+# Если полный путь к пакету не найден в общей папке, скопировать его из общей папки
+:COPY
+gpupdate /force
+GOTO INSTALLERCHECK
+
+# Если полный путь к пакету найден, установить его
+:INSTALL
+msiexec /i %FULL\_PATH% TRANSFORMS=%SHARE\_PATH%\Client.mst TRANSFORMS=%SHARE\_PATH%\1049.mst /passive /n
+IF %ERRORLEVEL% NEQ 0 (
+    echo %DATE% %TIME% %USERNAME% 1C installation failed >> %LOG\_PATH%
+) ELSE (
+    echo %DATE% %TIME% %USERNAME% 1C installation successful >> %LOG\_PATH%
+)
+GOTO END
+
+# Завершение установки
+:END
+exit
