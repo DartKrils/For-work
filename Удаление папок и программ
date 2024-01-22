@@ -1,0 +1,44 @@
+# Список Папок для удаления
+$foldersToDelete = "Укажите путь к папкам на удаление"
+# Список Программ для удаления
+$programsToRemove = @(
+"Укажите имена программ на удаление через запятую"
+)
+
+$logFilePath = "путь к лог файлу"
+
+# Получаем текущую дату и время
+$currentDateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+# Получаем имя устройства
+$deviceName = $env:COMPUTERNAME
+
+# Создаем запись для лога
+$logEntry = "$currentDateTime - Device: $deviceName"
+
+foreach ($programName in $programsToRemove) {
+    # Получаем команду для удаления программы
+    $uninstallString = (Get-WmiObject Win32_Product -Filter "Name = '$programName'").Uninstall()
+
+    if ($uninstallString) {
+        # Запускаем команду для удаления программы
+        Start-Process -FilePath cmd.exe -ArgumentList "/C $uninstallString /quiet" -Wait
+        $logEntry += " - Program: $programName - Удалено"
+    } else {
+        $logEntry += " - Program: $programName - Не найдено"
+    }
+}
+
+ForEach ($folder in $foldersToDelete) {
+    If (Test-Path $folder) {
+     # Запускаем команду для удаления папки
+        Remove-Item -Path $folder -Recurse -Force
+   $logEntry += " - Папка $folder успешно удалена"
+  } else {
+    $logEntry += " - Папка $folder не существует"
+  }
+}
+# Записываем запись в лог-файл
+$logEntry | Out-File -Append -FilePath $logFilePath
+
+Write-Host "Операция завершена. Сведения записаны в лог-файл: $logFilePath"
