@@ -1,0 +1,25 @@
+$ADUsers = Get-ADUser -SearchBase 'OU=имя OU,DC=имя домена,DC=имя домена,DC=ru\com' -Filter '*' -Properties GivenName, mail | Where-Object { $_.GivenName -notlike "имя OU , которым не надо отправлять сообщение*" -and $_.DistinguishedName -notlike "*если нужна еще одна OU кому не надо отправлять сообщение ,*"}| Select-Object GivenName, mail
+foreach ($user in $ADUsers) {
+    $email_password = ConvertTo-SecureString '' -AsPlainText -Force
+    $email_credential = New-Object System.Management.Automation.PSCredential ('ваша почта', $email_password)
+    $smtp_server = 'smtp.yandex.ru'
+    $email_send_from = 'Подпись от кого'
+    $email = $user.mail
+    $email_name = $user.GivenName
+       $sendMailParams = @{
+From = $email_send_from
+To = $email
+ BodyAsHtml = $true
+ Subject = 'Тема письма'
+ Body = "<p>Здравствуйте, $email_name </p> 
+ <p>Текст письма </p>
+            SMTPServer = $smtp_server
+            Port = 587
+            UseSsl = $true
+            Credential = $email_credential
+            Encoding = 'UTF8'
+        }
+        
+        Send-MailMessage @sendMailParams
+    }
+
